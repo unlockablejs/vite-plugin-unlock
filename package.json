@@ -1,0 +1,77 @@
+{
+  "name": "@unlockable/vite-plugin-unlock",
+  "version": "0.1.0",
+  "description": "Universal Vite plugin to unlock and override any module from any npm package by filename convention",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./medusa": {
+      "import": {
+        "types": "./dist/medusa.d.ts",
+        "default": "./dist/medusa.js"
+      },
+      "require": {
+        "types": "./dist/medusa.d.cts",
+        "default": "./dist/medusa.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "yarn build"
+  },
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "unlock",
+    "override",
+    "module-override",
+    "component-override",
+    "theming",
+    "customization",
+    "unlockable",
+    "medusa"
+  ],
+  "author": {
+    "name": "Olivier Belaud",
+    "url": "https://olivierbelaud.dev"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/unlockablejs/vite-plugin-unlock#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unlockablejs/vite-plugin-unlock.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unlockablejs/vite-plugin-unlock/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "vite": ">=5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}
