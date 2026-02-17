@@ -33,6 +33,7 @@ The plugin is designed to work with any Vite-based project, but Medusa is the on
 - [Generic Usage](#generic-usage)
 - [How It Works](#how-it-works)
 - [Options Reference](#options-reference)
+- [Contributing](#contributing)
 - [License](#license)
 
 ---
@@ -340,6 +341,10 @@ unlock({
 ```
 
 ---
+
+## Contributing
+
+Contributions are welcome. If you find a bug or have a feature request, please [open an issue](https://github.com/unlockablejs/vite-plugin-unlock/issues).
 
 ## License
 
