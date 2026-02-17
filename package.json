@@ -1,6 +1,6 @@
 {
   "name": "@unlockable/vite-plugin-unlock",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Universal Vite plugin to unlock and override any module from any npm package by filename convention",
   "type": "module",
   "main": "./dist/index.cjs",
