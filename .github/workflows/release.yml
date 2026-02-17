@@ -18,14 +18,14 @@ jobs:
         with:
           node-version: 22
           cache: yarn
-          registry-url: https://registry.npmjs.org
 
-      - run: npm install -g npm@latest
       - run: yarn install --immutable
       - run: yarn build
 
       - name: Publish to npm (Trusted Publishing via OIDC)
-        run: npm publish --provenance --access public
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm publish --provenance --access public
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
