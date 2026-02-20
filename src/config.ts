@@ -25,10 +25,16 @@ function findPackageSrcPath(
 ): string | null {
   const cwd = process.cwd()
 
-  // Try require.resolve to find the package
+  // Try require.resolve to find the package.
+  // Use fs.realpathSync to resolve symlinks — critical for pnpm where
+  // packages are symlinked from .pnpm/. Vite resolves all paths to their
+  // real locations (preserveSymlinks defaults to false), so our paths must
+  // match for findImporterTarget comparisons to work.
   try {
     const req = createRequire(path.join(cwd, "package.json"))
-    const pkgJsonPath = req.resolve(`${packageName}/package.json`)
+    const pkgJsonPath = fs.realpathSync(
+      req.resolve(`${packageName}/package.json`)
+    )
     const pkgRoot = path.dirname(pkgJsonPath)
     const srcPath = path.join(pkgRoot, srcDir)
     if (fs.existsSync(srcPath)) return srcPath
@@ -47,7 +53,7 @@ function findPackageSrcPath(
   ]
 
   for (const dir of candidates) {
-    if (fs.existsSync(dir)) return dir
+    if (fs.existsSync(dir)) return fs.realpathSync(dir)
   }
 
   const rootCandidates = [
@@ -56,7 +62,7 @@ function findPackageSrcPath(
   ]
 
   for (const dir of rootCandidates) {
-    if (fs.existsSync(dir)) return dir
+    if (fs.existsSync(dir)) return fs.realpathSync(dir)
   }
 
   return null

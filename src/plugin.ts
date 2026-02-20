@@ -1,6 +1,6 @@
 import path from "path"
 import fs from "fs"
-import type { Plugin } from "vite"
+import type { Plugin, ResolvedConfig } from "vite"
 import type { UnlockOptions, ResolvedTarget } from "./types"
 import type { ResolverState } from "./resolver"
 import { resolveOptions } from "./config"
@@ -97,6 +97,11 @@ export function unlock(userOptions: UnlockOptions): Plugin {
     }
   }
 
+  // Flag set in configResolved: when a React plugin is present,
+  // we hand over ALL HMR responsibility (Fast Refresh handles it).
+  // The plugin keeps only module resolution, overrides, and CSS redirect.
+  let hasExternalReactPlugin = false
+
   return {
     name: PLUGIN_NAME,
     enforce: "pre",
@@ -154,6 +159,25 @@ export function unlock(userOptions: UnlockOptions): Plugin {
             config.optimizeDeps.entries = [entryFile]
           }
         }
+      }
+    },
+
+    configResolved(resolvedConfig: ResolvedConfig) {
+      // Detect if a React HMR plugin is already registered.
+      // When present, we skip our own HMR boundary injection and let
+      // React Fast Refresh handle all HMR — avoiding the "double dose"
+      // that causes "Identifier 'prevRefreshReg' has already been declared".
+      hasExternalReactPlugin = resolvedConfig.plugins.some(
+        (p) =>
+          p.name === "vite:react-babel" ||
+          p.name === "vite:react-swc" ||
+          p.name === "vite:react-refresh"
+      )
+
+      if (hasExternalReactPlugin) {
+        logger.info(
+          "React plugin detected — handing over HMR to React Fast Refresh"
+        )
       }
     },
 
@@ -271,7 +295,7 @@ export function unlock(userOptions: UnlockOptions): Plugin {
     },
 
     transform(code, id) {
-      // Target-level HMR: CSS redirect + entry boundary
+      // Target-level transforms: CSS redirect (always) + entry boundary (only without React plugin)
       for (const target of opts.targets) {
         if (!target.hmr || !target.entryFilePath) continue
 
@@ -281,6 +305,8 @@ export function unlock(userOptions: UnlockOptions): Plugin {
 
         let modified = false
 
+        // CSS redirect is always needed — it avoids Tailwind reprocessing,
+        // independent of HMR strategy.
         if (target.hmr.cssRedirect) {
           const { from, to } = target.hmr.cssRedirect
           const importPattern = `import "${from}"`
@@ -291,6 +317,10 @@ export function unlock(userOptions: UnlockOptions): Plugin {
           }
         }
 
+        // Entry boundary: ALWAYS inject. The entry file lives in node_modules,
+        // which @vitejs/plugin-react excludes by default — so React Fast Refresh
+        // never touches it. Without our boundary, HMR changes propagate to the
+        // root and cause unnecessary full-page reloads.
         if (target.hmr.entryBoundary) {
           code += "\nif (import.meta.hot) { import.meta.hot.accept() }"
           logger.info(
@@ -302,8 +332,9 @@ export function unlock(userOptions: UnlockOptions): Plugin {
         if (modified) return { code, map: null }
       }
 
-      // Content-based HMR boundaries
-      if (opts.hmrBoundaries.length > 0) {
+      // Content-based HMR boundaries: only inject when NO React plugin handles HMR.
+      // React Fast Refresh already self-accepts React component modules.
+      if (!hasExternalReactPlugin && opts.hmrBoundaries.length > 0) {
         const normId = normalizePath(id)
         if (!normId.includes("/node_modules/")) {
           const needsBoundary = opts.hmrBoundaries.some((p) =>
